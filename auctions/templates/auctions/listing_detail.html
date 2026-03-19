@@ -1,0 +1,72 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+    <h2>{{ listing.title }}</h2>
+
+    <p><strong>Description:</strong> {{ listing.description}} </p>
+    <p><strong>Starting Bid:</strong>{{ listing.starting_bid }}</p>
+    <p><strong>Category:</strong>{{ listing.category }}</p>
+    <p><strong>Owner:</strong>{{ listing.owner.username }}</p>
+    <p><strong>Current Price:</strong>{{ current_price }}$</p>
+
+    {% if listing.image_url %}
+    <img src="{{ listing.image_url }}" alt="{{ listing.title }}" width="300">
+
+    {% endif %}
+    {% if user.is_authenticated and user == listing.owner and listing.active %}
+        <form action="{% url 'close_auction' listing.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Close Auction</button>
+        </form>
+    {% endif %}
+        {% if user.is_authenticated and listing.active %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="number" step="0.01" name="bid_amount" placeholder="Your Bid...">
+                <button type="submit" name="bid_submit">Place Bid</button>
+            </form>
+        {% endif %}
+        {% if user.is_authenticated %}
+            <form method="post">
+                {% csrf_token %}
+                <textarea name="comment_content" placeholder="Write your Comment ..." required></textarea>
+                <button type="submit" name="comment_submit">Add Comment</button>
+            </form>
+        {% endif %}
+    {% if error %}
+            <p style="color:red;">{{ error }}</p>
+    {% endif %}
+    <p><strong>Bids:</strong> {{ bid_count }}</p>
+    <h3>Comments</h3>
+    <ul>
+        {% for comment in comments %}
+        <li>
+            <strong>{{ comment.user.username }}</strong>: {{ comment.content }}
+        </li>
+        {% empty %}
+            <li>No comments yet!</li>
+        {% endfor %}
+    </ul>
+    {% if user.is_authenticated %}
+        <form action="{% url 'toggle_watchlist' listing.id %}" method="post">
+                {% csrf_token %}
+                {% if user in listing.watchers.all %}
+                    <button type="submit">Remove from Watchlist</button>
+                {% else %}
+                    <button type="submit">Add to Watchlist</button>
+                {% endif %}
+    {% endif %}
+        </form>
+    {% if not listing.active %}
+        <p><strong>This auction is closed.</strong></p>
+        {% if winner %}
+            {% if user == winner %}
+                <p style="color: green;"><strong>You won this Auction!</strong></p>
+            {% else %}
+                <p><strong>Winner:</strong> {{ winner.username }}</p>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+{% endblock %}
