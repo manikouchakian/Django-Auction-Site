@@ -27,6 +27,14 @@ Python · Django · SQLite
     python manage.py migrate
     python manage.py runserver
 
+
+## Tests
+
+    python manage.py test
+
+Nine tests cover bidding, the watchlist and closing an auction.
+    
+
 ## State
 
 Works end to end. There are no tests yet. That is the next thing I want to add.
