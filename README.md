@@ -27,19 +27,7 @@ Python · Django · SQLite
     python manage.py migrate
     python manage.py runserver
 
-## Configuration
 
-Two settings come from the environment:
-
-    export DJANGO_SECRET_KEY="your-own-random-key"
-    export DJANGO_DEBUG=0
-
-If you do not set them, the project falls back to a public development key and
-`DEBUG=1`. That is fine on your own machine and wrong everywhere else.
-
-An earlier version of this repository had the key written directly in
-`commerce/settings.py`, and it is still in the git history. I do not use that key
-any more. It only ever protected a local SQLite file.
 
 ## State
 
