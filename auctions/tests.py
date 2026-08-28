@@ -27,6 +27,10 @@ class ListingTestCase(TestCase):
     def bid(self, amount):
         return self.client.post(self.url, {"bid_submit": "1", "bid_amount": amount})
 
+    def close_listing(self):
+        self.listing.active = False
+        self.listing.save()
+
     def test_starting_bid_is_the_first_current_price(self):
         response = self.client.get(self.url)
         self.assertEqual(response.context["current_price"], Decimal("10.00"))
@@ -55,6 +59,38 @@ class ListingTestCase(TestCase):
         self.assertEqual(Bid.objects.count(), 1)
         self.assertIn("error", response.context)
 
+    def test_a_bid_that_is_not_a_number_is_rejected(self):
+        self.client.login(username="bidder", password="pw-bidder")
+        response = self.bid("abc")
+
+        self.assertEqual(Bid.objects.count(), 0)
+        self.assertIn("error", response.context)
+
+    def test_bidding_without_a_login_is_not_possible(self):
+        response = self.bid("15.00")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Bid.objects.count(), 0)
+
+    def test_bid_on_a_closed_auction_is_rejected(self):
+        self.close_listing()
+        self.client.login(username="bidder", password="pw-bidder")
+
+        response = self.bid("15.00")
+
+        self.assertEqual(Bid.objects.count(), 0)
+        self.assertIn("error", response.context)
+
+    def test_there_is_only_a_winner_after_the_auction_is_closed(self):
+        self.client.login(username="bidder", password="pw-bidder")
+        self.bid("15.00")
+
+        self.assertIsNone(self.client.get(self.url).context["winner"])
+
+        self.close_listing()
+
+        self.assertEqual(self.client.get(self.url).context["winner"], self.bidder)
+
     def test_owner_can_close_the_auction(self):
         self.client.login(username="owner", password="pw-owner")
         self.client.post(reverse("close_auction", args=[self.listing.id]))
@@ -81,6 +117,7 @@ class ListingTestCase(TestCase):
 
     def test_watchlist_requires_a_login(self):
         response = self.client.get(reverse("watchlist"))
+
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse("login"), response.url)
 
